@@ -1,32 +1,35 @@
+# openspec/config.yaml
 schema: spec-driven
 
-# Project context (optional)
-# Add only constraints that should guide OpenSpec artifacts and workflows.
-# Include constraints an agent cannot infer by reading the code.
-# Keep general project documentation and discoverable codebase facts out.
-# Example:
-#   context: |
-#     Designs and tasks must cover Windows, macOS, and Linux
-#     Write all artifacts in Spanish
+context: |
+  Project: Autonomous Incident Triage Agent.
+  Seed idea: docs/idea.md (the original intent). Once capabilities are archived,
+  specs in openspec/specs/ are the source of truth.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always state what is out of scope
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  Stack (zero-cost, no credit card):
+  - Python 3.11
+  - LLM: Gemini via Google AI Studio (langchain-google-genai); confirm current free-tier model names in AI Studio
+  - Embeddings: Gemini embeddings, 768 dimensions (output_dimensionality=768)
+  - Vector store + state: Supabase Postgres with pgvector, via the transaction pooler on port 6543
+  - Agent engine: LangGraph with PostgresSaver checkpointer over psycopg_pool
+  - App: FastAPI with Gradio Blocks mounted at "/", single ASGI object `app` in app.py
+  - Hosting: Render free web service, start command `uvicorn app:app --host 0.0.0.0 --port $PORT`
 
-# Per-operation guidance (optional)
-# Add advisory guidance for how apply and archive work should be conducted.
-# This is separate from artifact rules above.
-# Example:
-#   operations:
-#     apply:
-#       guidance:
-#         - Keep test summaries concise
-#     archive:
-#       guidance:
-#         - Summarize the archive outcome before finishing
+  Files: seed_rag.py, agent.py, app.py, requirements.txt, db/migrations/*.sql, tests/.
+  Secrets come only from environment variables (GEMINI_API_KEY, DATABASE_URL), loaded with python-dotenv locally.
+  Developer OS: Windows + PowerShell (give PowerShell commands).
+
+rules:
+  proposal:
+    - State which capability (knowledge-base, triage-agent, hitl-approval, triage-api, triage-ui, deployment) is affected
+    - Include a rollback note
+  specs:
+    - Use SHALL/MUST requirements with GIVEN/WHEN/THEN scenarios
+    - Every sensitive tool action MUST have a scenario covering approval AND rejection
+    - Scenarios must be testable without calling real Gemini or Supabase
+  design:
+    - Record key decisions and the alternatives considered
+    - Note free-tier limits that affect the design (rate limits, pooler, cold starts)
+  tasks:
+    - Include pytest tasks that mock the LLM and the database
+    - Never include a task that writes secrets to a committed file
